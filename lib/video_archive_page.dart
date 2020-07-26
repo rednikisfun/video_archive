@@ -27,21 +27,21 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
   var isLoadingMain = false;
   Map<DateTime, List<dynamic>> events = {};
   DateTime date = DateTime.now();
-  double hour = 0;
+  double hour = double.parse(DateTime.now().hour.toString());
 
-  Future genThumbnailFile() async {
-    // var tempDir = await getExternalStorageDirectory();
-    // String fullPath = tempDir.path + "/video.mp4";
-    // final thumbnail = await VideoCompress.getFileThumbnail(
-    //   fullPath,
-    //   quality: 100, // default(100)
-    //   position: -1, // default(-1)
-    // );
-    // setState(() {
-    //   final file = thumbnail;
-    //   filePath = file.path;
-    // });
-  }
+  // Future genThumbnailFile() async {
+  // var tempDir = await getExternalStorageDirectory();
+  // String fullPath = tempDir.path + "/video.mp4";
+  // final thumbnail = await VideoCompress.getFileThumbnail(
+  //   fullPath,
+  //   quality: 100, // default(100)
+  //   position: -1, // default(-1)
+  // );
+  // setState(() {
+  //   final file = thumbnail;
+  //   filePath = file.path;
+  // });
+  // }
 
   Future<int> getSize(String url) async {
     final response = await http.head(url);
@@ -178,6 +178,8 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                         date = chosenDate;
                                         hour =
                                             double.parse(date.hour.toString());
+                                        _calendarController
+                                            .setSelectedDay(date);
                                       });
                                     });
                                   },
@@ -189,16 +191,6 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                 InkWell(
                                   child: TimePicker(date: date),
                                   onTap: () {
-                                    // DatePicker.showTimePicker(context,
-                                    //     currentTime: date,
-                                    //     showSecondsColumn: false,
-                                    //     onConfirm: (time) {
-                                    //   setState(() {
-                                    //     date = time;
-                                    //   });
-                                    //   _fetchData(date);
-                                    //   print(date);
-                                    // });
                                     Navigator.of(context).push(
                                       showPicker(
                                         is24HrFormat: true,
@@ -216,6 +208,8 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
 
                                           hour = double.parse(
                                               date.hour.toString());
+                                          _calendarController
+                                              .setSelectedDay(date);
                                           _fetchData(date);
                                           print(date);
                                         },
@@ -233,6 +227,7 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                               height: 50.0,
                             ),
                             TableCalendar(
+                              initialSelectedDay: date,
                               calendarController: _calendarController,
                               initialCalendarFormat: CalendarFormat.month,
                               onDaySelected: (DateTime chosenDate, List list) {
@@ -266,6 +261,7 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                               child: Text(
                                 'Выберите час:',
                                 style: TextStyle(
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 18.0,
                                 ),
                               ),
@@ -279,6 +275,10 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                               ),
                               child: Slider.adaptive(
                                 value: hour,
+                                onChangeEnd: (value) {
+                                  _calendarController.setSelectedDay(date);
+                                  _fetchData(date);
+                                },
                                 onChanged: (value) {
                                   setState(() {
                                     hour = value;
@@ -289,7 +289,6 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                         int.parse(hour.round().toString()),
                                         date.minute);
                                   });
-                                  _fetchData(date);
                                 },
                                 divisions: 23,
                                 min: 0.0,
@@ -303,8 +302,21 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                       SizedBox(
                         height: 50.0,
                       ),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          right: 200.0,
+                          bottom: 50.0,
+                        ),
+                        child: Text(
+                          'Выберите видео:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18.0,
+                          ),
+                        ),
+                      ),
                       Container(
-                        width: 200.0,
+                        width: 220.0,
                         child: isLoading
                             ? Center(
                                 child: CircularProgressIndicator(),
@@ -335,13 +347,21 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                           );
                                         },
                                         child: Container(
-                                          width: 200.0,
+                                          width: 220.0,
                                           height: 80.0,
                                           decoration: BoxDecoration(
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black12,
+                                                blurRadius: 5.0,
+                                                spreadRadius: 2.0,
+                                              ),
+                                            ],
+                                            color: Colors.white,
                                             borderRadius:
                                                 BorderRadius.circular(10.0),
                                             border: Border.all(
-                                              color: Colors.black,
+                                              color: Colors.black54,
                                             ),
                                           ),
                                           child: Row(
@@ -350,27 +370,7 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.center,
                                             children: [
-                                              // filePath != null
-                                              //     ? ClipRRect(
-                                              //         borderRadius:
-                                              //             BorderRadius.only(
-                                              //           topLeft:
-                                              //               Radius.circular(
-                                              //                   10.0),
-                                              //           bottomLeft:
-                                              //               Radius.circular(
-                                              //                   10.0),
-                                              //         ),
-                                              //         child: Image(
-                                              //           image: AssetImage(
-                                              //               filePath),
-                                              //           width: 110.0,
-                                              //         ),
-                                              //       )
-                                              //     : Text('Подождите...'),
                                               Container(
-                                                margin:
-                                                    EdgeInsets.only(left: 65.0),
                                                 child: Column(
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.center,
@@ -378,50 +378,83 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                                       MainAxisAlignment.center,
                                                   children: [
                                                     Container(
-                                                      child: Text(
-                                                        list['names'][index]
-                                                                ['time']
-                                                            .toString(),
-                                                        style: TextStyle(
-                                                          fontSize: 18,
-                                                        ),
+                                                      width: 200.0,
+                                                      child: Row(
+                                                        children: [
+                                                          SizedBox(
+                                                            width: 30,
+                                                          ),
+                                                          Text(
+                                                            'Время: ',
+                                                            style: TextStyle(
+                                                              fontSize: 18,
+                                                              color:
+                                                                  Colors.blue,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            list['names'][index]
+                                                                    ['time']
+                                                                .toString(),
+                                                            style: TextStyle(
+                                                              fontSize: 18,
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                     SizedBox(
                                                       height: 20.0,
                                                     ),
                                                     Container(
-                                                      child: double.parse(list[
-                                                                          'names']
-                                                                      [index][
-                                                                  'duration']) >
-                                                              10
-                                                          ? Text(
-                                                              '00:' +
-                                                                  double.parse(list['names']
-                                                                              [
-                                                                              index]
-                                                                          [
-                                                                          'duration'])
-                                                                      .round()
-                                                                      .toString(),
-                                                              style: TextStyle(
-                                                                fontSize: 18,
-                                                              ),
-                                                            )
-                                                          : Text(
-                                                              "00:0" +
-                                                                  double.parse(list['names']
-                                                                              [
-                                                                              index]
-                                                                          [
-                                                                          'duration'])
-                                                                      .round()
-                                                                      .toString(),
-                                                              style: TextStyle(
-                                                                fontSize: 18,
-                                                              ),
+                                                      width: 200.0,
+                                                      child: Row(
+                                                        children: [
+                                                          SizedBox(
+                                                            width: 30,
+                                                          ),
+                                                          Text(
+                                                            'Протяжность: ',
+                                                            style: TextStyle(
+                                                              fontSize: 18,
+                                                              color:
+                                                                  Colors.green,
                                                             ),
+                                                          ),
+                                                          double.parse(list['names']
+                                                                          [
+                                                                          index]
+                                                                      [
+                                                                      'duration']) >
+                                                                  10
+                                                              ? Text(
+                                                                  '00:' +
+                                                                      double.parse(list['names'][index]
+                                                                              [
+                                                                              'duration'])
+                                                                          .round()
+                                                                          .toString(),
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        18,
+                                                                  ),
+                                                                )
+                                                              : Text(
+                                                                  "00:0" +
+                                                                      double.parse(list['names'][index]
+                                                                              [
+                                                                              'duration'])
+                                                                          .round()
+                                                                          .toString(),
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        18,
+                                                                  ),
+                                                                ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ],
                                                 ),

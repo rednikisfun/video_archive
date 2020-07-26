@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 var dio = Dio();
 VideoPlayerController videoPlayerController;
@@ -26,9 +27,10 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
   var uint8list;
   bool isLoadingMain = false;
   String dir;
+  String dir1;
 
   Future<bool> checkExistance(String name) async {
-    var tempDir = await getExternalStorageDirectory();
+    var tempDir = await getTemporaryDirectory();
     dir = tempDir.path;
     if (await File(tempDir.path + "/$name.mp4").exists()) {
       print("File exists");
@@ -40,8 +42,36 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
   }
 
   Future download2(Dio dio, String url, String name) async {
-    var tempDir = await getExternalStorageDirectory();
+    var tempDir = await getTemporaryDirectory();
     String fullPath = tempDir.path + "/$name.mp4";
+    try {
+      Response response = await dio.get(url,
+          //Received data with List<int>
+          options: Options(
+              responseType: ResponseType.bytes,
+              followRedirects: false,
+              validateStatus: (status) {
+                return status < 500;
+              }), onReceiveProgress: (n, i) {
+        print(n);
+      });
+      // print(response.data);
+      print(response.headers);
+      File file = File(fullPath);
+      var raf = file.openSync(mode: FileMode.write);
+      // response.data is List<int> type
+      raf.writeFromSync(response.data);
+      await raf.close();
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future download(Dio dio, String url, String name) async {
+    var tempDir = await getExternalStorageDirectory();
+    print(tempDir.path);
+    String fullPath = tempDir.path + "/$name.mp4";
+    dir1 = tempDir.path;
     try {
       Response response = await dio.get(url,
           //Received data with List<int>
@@ -116,34 +146,68 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
     );
 
     return Scaffold(
-      body: Center(
-        child: isLoadingMain
-            ? CircularProgressIndicator()
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Chewie(
-                    controller: chewieController,
-                  ),
-                  Container(
-                      // child: Image.memory(uint8list),
+      body: isLoadingMain
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Column(
+              children: [
+                InkWell(
+                  child: FaIcon(FontAwesomeIcons.cross),
+                  onTap: () {},
+                ),
+                SizedBox(
+                  height: 50,
+                ),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Chewie(
+                        controller: chewieController,
                       ),
-                ],
-              ),
-      ),
+                      Container(
+                        width: 100.0,
+                        height: 100.0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Builder(
+                              builder: (context) => InkWell(
+                                onTap: () async {
+                                  await download(
+                                    dio,
+                                    widget.url,
+                                    widget.name,
+                                  );
+                                  Scaffold.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Файл сохранён в $dir1',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Icon(
+                                  Icons.file_download,
+                                  size: 50.0,
+                                ),
+                              ),
+                            ),
+                            // InkWell(
+                            //   child: Icon(
+                            //     Icons.frame,
+                            //     size: 50.0,
+                            //   ),
+                            // ),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
-
-// Future<Uint8List> thumbnailBytes() async {
-//   dynamic thumbnail = await VideoThumbnail.thumbnailFile(
-//     video:
-//         "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
-//     thumbnailPath: (await getTemporaryDirectory()).path,
-//     imageFormat: ImageFormat.PNG,
-//     maxHeight:
-//         64, // specify the height of the thumbnail, let the width auto-scaled to keep the source aspect ratio
-//     quality: 75,
-//   );
-//   return thumbnail;
-// }
