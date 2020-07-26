@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+// import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 // import 'package:video_compress/video_compress.dart';
 import 'package:http/http.dart' as http;
@@ -30,8 +30,8 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
   double hour = 0;
 
   Future genThumbnailFile() async {
-    var tempDir = await getExternalStorageDirectory();
-    String fullPath = tempDir.path + "/video.mp4";
+    // var tempDir = await getExternalStorageDirectory();
+    // String fullPath = tempDir.path + "/video.mp4";
     // final thumbnail = await VideoCompress.getFileThumbnail(
     //   fullPath,
     //   quality: 100, // default(100)

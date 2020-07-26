@@ -65,6 +65,11 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
     }
   }
 
+  deleteFile() {
+    final directory = Directory(dir);
+    directory.deleteSync(recursive: true);
+  }
+
   start() async {
     if (await checkExistance(widget.name) == false) {
       setState(() {
@@ -91,6 +96,7 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
   void dispose() {
     videoPlayerController.dispose();
     chewieController.dispose();
+    deleteFile();
     super.dispose();
   }
 
@@ -109,9 +115,6 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
       placeholder: Container(),
     );
 
-    final playerWidget = Chewie(
-      controller: chewieController,
-    );
     return Scaffold(
       body: Center(
         child: isLoadingMain
