@@ -150,63 +150,72 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
           ? Center(
               child: CircularProgressIndicator(),
             )
-          : Column(
-              children: [
-                InkWell(
-                  child: FaIcon(FontAwesomeIcons.cross),
-                  onTap: () {},
-                ),
-                SizedBox(
-                  height: 50,
-                ),
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Chewie(
-                        controller: chewieController,
+          : SafeArea(
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Column(
+                    children: [
+                      SizedBox(
+                        height: 100,
                       ),
-                      Container(
-                        width: 100.0,
-                        height: 100.0,
-                        child: Row(
+                      Center(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Builder(
-                              builder: (context) => InkWell(
-                                onTap: () async {
-                                  await download(
-                                    dio,
-                                    widget.url,
-                                    widget.name,
-                                  );
-                                  Scaffold.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Файл сохранён в $dir1',
+                          children: <Widget>[
+                            Chewie(
+                              controller: chewieController,
+                            ),
+                            Container(
+                              width: 100.0,
+                              height: 100.0,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Builder(
+                                    builder: (context) => InkWell(
+                                      onTap: () async {
+                                        await download(
+                                          dio,
+                                          widget.url,
+                                          widget.name,
+                                        );
+                                        Scaffold.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Файл сохранён в $dir1',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.file_download,
+                                        size: 50.0,
                                       ),
                                     ),
-                                  );
-                                },
-                                child: Icon(
-                                  Icons.file_download,
-                                  size: 50.0,
-                                ),
+                                  ),
+                                  // InkWell(
+                                  //   child: Icon(
+                                  //     Icons.frame,
+                                  //     size: 50.0,
+                                  //   ),
+                                  // ),
+                                ],
                               ),
-                            ),
-                            // InkWell(
-                            //   child: Icon(
-                            //     Icons.frame,
-                            //     size: 50.0,
-                            //   ),
-                            // ),
+                            )
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
-                ),
-              ],
+                  IconButton(
+                    icon: Icon(Icons.arrow_back),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  )
+                ],
+              ),
             ),
     );
   }

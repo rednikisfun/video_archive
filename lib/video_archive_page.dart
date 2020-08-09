@@ -1,6 +1,6 @@
-import 'dart:developer';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 // import 'package:path_provider/path_provider.dart';
@@ -10,8 +10,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
-import 'package:day_night_time_picker/day_night_time_picker.dart';
+// import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+// import 'package:day_night_time_picker/day_night_time_picker.dart';
+// import 'package:flutter_rounded_date_picker/rounded_picker.dart';
 
 import './video_page.dart';
 
@@ -33,6 +34,10 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
   List hours = [];
   DateTime date = DateTime.now();
   double hour = double.parse(DateTime.now().hour.toString());
+  DateTime _selectedDate;
+  String _selectedTime = '00';
+  List<String> timeList = [];
+  final globalKey = GlobalKey<ScaffoldState>();
 
   // Future genThumbnailFile() async {
   // var tempDir = await getExternalStorageDirectory();
@@ -144,11 +149,119 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
     _refreshController.loadComplete();
   }
 
+  showUniversalPicker() {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Builder(
+            builder: (context) => Container(
+              height: 300,
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      CupertinoButton(
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      CupertinoButton(
+                        child: Text(
+                          'Done',
+                          style: TextStyle(color: Colors.blue),
+                        ),
+                        onPressed: () {
+                          // _selectedDate = DateTime.parse(
+                          //   _selectedDate.toString().replaceAll('Z', ''),
+                          // );
+                          getHours();
+                          hours.contains(_selectedTime)
+                              ? setState(() {
+                                  date = _selectedDate;
+                                  date = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    int.parse(_selectedTime),
+                                  );
+                                  _calendarController.setSelectedDay(date);
+                                  _fetchDataHour(date);
+                                })
+                              : globalKey.currentState.showSnackBar(
+                                  SnackBar(
+                                    content: Text('В выбраной дате нет видео'),
+                                  ),
+                                );
+
+                          // print(date);
+                          Navigator.of(context).pop();
+                        },
+                      )
+                    ],
+                  ),
+                  Container(
+                      height: 200.0,
+                      child: Flex(
+                        direction: Axis.horizontal,
+                        children: <Widget>[
+                          Flexible(
+                            flex: 8,
+                            child: CupertinoDatePicker(
+                              mode: CupertinoDatePickerMode.date,
+                              initialDateTime: date,
+                              onDateTimeChanged: (DateTime dateTime) {
+                                setState(() {
+                                  _selectedDate = dateTime;
+                                });
+                              },
+                            ),
+                          ),
+                          Flexible(
+                            flex: 2,
+                            child: CupertinoPicker(
+                                itemExtent: 38,
+                                useMagnifier: true,
+                                magnification: 0.95,
+                                onSelectedItemChanged: (int index) {
+                                  setState(() {
+                                    _selectedTime = timeList[index];
+                                  });
+                                },
+                                children: timeList
+                                    .map(
+                                      (item) => Center(
+                                        child: Text(
+                                          item,
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList()),
+                          ),
+                        ],
+                      )),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
   @override
   void initState() {
     super.initState();
     _calendarController = CalendarController();
     _fetchDataDay(date);
+    for (int i = 0; i < 24; i++) {
+      timeList.add(i.toString().padLeft(2, '0'));
+    }
     getEvents();
   }
 
@@ -161,6 +274,7 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: globalKey,
       body: Builder(builder: (context) {
         return SafeArea(
           child: SmartRefresher(
@@ -187,112 +301,52 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                 width: 100.0,
                               ),
                               SizedBox(height: 50.0),
-                              Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      InkWell(
-                                        child: Date(date: date),
-                                        onTap: () {
-                                          DatePicker.showDatePicker(context,
-                                              currentTime: date,
-                                              onConfirm: (chosenDate) {
-                                            chosenDate = DateTime.parse(
-                                              chosenDate
-                                                  .toString()
-                                                  .replaceAll('Z', ''),
-                                            );
-                                            events.containsKey(chosenDate)
-                                                ? setState(() {
-                                                    date = chosenDate;
-                                                    hour = double.parse(
-                                                        date.hour.toString());
-                                                    getHours();
-                                                    _fetchDataDay(date);
-                                                    _calendarController
-                                                        .setSelectedDay(date);
-                                                  })
-                                                : Scaffold.of(context)
-                                                    .showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                          'В выбранной дате нет видео'),
-                                                    ),
-                                                  );
-                                          });
-                                        },
-                                        borderRadius: BorderRadius.only(
-                                          bottomLeft: Radius.circular(10.0),
-                                          topLeft: Radius.circular(10.0),
-                                        ),
-                                      ),
-                                      InkWell(
-                                        child: TimePicker(date: date),
-                                        onTap: () async {
-                                          await getHours();
-                                          Navigator.of(context).push(
-                                            showPicker(
-                                              is24HrFormat: true,
-                                              context: context,
-                                              value: TimeOfDay(
-                                                hour: date.hour,
-                                                minute: date.minute,
-                                              ),
-                                              onChange: (time) {
-                                                hours.contains(time.hour
-                                                                .toString()
-                                                                .length ==
-                                                            1
-                                                        ? "0${time.hour}"
-                                                        : time.hour.toString())
-                                                    ? setState(() {
-                                                        date = DateTime(
-                                                          date.year,
-                                                          date.month,
-                                                          date.day,
-                                                          time.hour,
-                                                          time.minute,
-                                                        );
-                                                      })
-                                                    : Scaffold.of(context)
-                                                        .showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                              'В выбраном часу нет видео'),
-                                                        ),
-                                                      );
+                              InkWell(
+                                child: Date(date: date),
+                                onTap: () {
+                                  // DatePicker.showPicker(context,
+                                  // currentTime: date,
+                                  //     pickerModel: CustomPicker(
+                                  //       currentTime: date,
+                                  //       locale: LocaleType.ru,
+                                  //     ), onConfirm: (chosenDate) {
+                                  //   chosenDate = DateTime.parse(
+                                  //     chosenDate
+                                  //         .toString()
+                                  //         .replaceAll('Z', ''),
+                                  //   );
+                                  //   events.containsKey(chosenDate)
+                                  //       ? setState(() {
+                                  //           date = chosenDate;
+                                  //           hour = double.parse(
+                                  //               date.hour.toString());
+                                  //           getHours();
+                                  //           _fetchDataDay(date);
+                                  //           _calendarController
+                                  //               .setSelectedDay(date);
+                                  //         })
+                                  //       : Scaffold.of(context)
+                                  //           .showSnackBar(
+                                  //           SnackBar(
+                                  //             content: Text(
+                                  //                 'В выбранной дате нет видео'),
+                                  //           ),
+                                  //         );
+                                  // });
 
-                                                hour = double.parse(
-                                                    date.hour.toString());
-                                                _calendarController
-                                                    .setSelectedDay(date);
-                                                _fetchDataHour(date);
-                                                print(date);
-                                              },
-                                            ),
-                                          );
-                                        },
-                                        borderRadius: BorderRadius.only(
-                                          bottomRight: Radius.circular(10.0),
-                                          topRight: Radius.circular(10.0),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(
-                                    height: 30.0,
-                                  ),
-                                  Center(
-                                    child: Text(
-                                      'Доступные часы:\n\n ${hours.toString().replaceAll('[', '').replaceAll(']', '')}',
-                                      style: TextStyle(
-                                        fontSize: 18.0,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
+                                  showUniversalPicker();
+
+                                  // CupertinoRoundedDatePicker.show(
+                                  //   context,
+                                  //   initialDatePickerMode:
+                                  //       CupertinoDatePickerMode
+                                  //           .dateAndTime,
+                                  // );
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              SizedBox(
+                                height: 30.0,
                               ),
                               SizedBox(
                                 height: 30.0,
@@ -316,7 +370,7 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                   setState(() {
                                     date = chosenDate;
                                     hour = double.parse(date.hour.toString());
-                                    getHours();
+                                    // getHours();
                                   });
                                   _fetchDataDay(date);
                                 },
@@ -530,39 +584,36 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
   }
 }
 
-class TimePicker extends StatelessWidget {
-  const TimePicker({
-    Key key,
-    @required this.date,
-  });
+// class TimePicker extends StatelessWidget {
+//   const TimePicker({
+//     Key key,
+//     @required this.date,
+//   });
 
-  final DateTime date;
+//   final DateTime date;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 100.0,
-      height: 50.0,
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Colors.black38,
-        ),
-        borderRadius: BorderRadius.only(
-          bottomRight: Radius.circular(10.0),
-          topRight: Radius.circular(10.0),
-        ),
-      ),
-      child: Center(
-        child: Text(
-          '${date.hour.toString()}:${DateFormat('mm').format(date)}',
-          style: TextStyle(
-            fontSize: 19.0,
-          ),
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       width: 100.0,
+//       height: 50.0,
+//       decoration: BoxDecoration(
+//         border: Border.all(
+//           color: Colors.black38,
+//         ),
+//         borderRadius: BorderRadius.circular(10),
+//       ),
+//       child: Center(
+//         child: Text(
+//           '${date.hour.toString()}:${DateFormat('mm').format(date)}',
+//           style: TextStyle(
+//             fontSize: 19.0,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class Date extends StatelessWidget {
   const Date({
@@ -580,10 +631,7 @@ class Date extends StatelessWidget {
         border: Border.all(
           color: Colors.black38,
         ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(10.0),
-          topLeft: Radius.circular(10.0),
-        ),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
         child: Text(
