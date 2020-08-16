@@ -4,7 +4,8 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:gallery_saver/gallery_saver.dart';
+import 'package:export_video_frame/export_video_frame.dart';
 
 var dio = Dio();
 VideoPlayerController videoPlayerController;
@@ -28,11 +29,12 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
   bool isLoadingMain = false;
   String dir;
   String dir1;
+  bool isPaused = false;
 
   Future<bool> checkExistance(String name) async {
     var tempDir = await getTemporaryDirectory();
     dir = tempDir.path;
-    if (await File(tempDir.path + "/$name.mp4").exists()) {
+    if (await File(tempDir.path + "/$name").exists()) {
       print("File exists");
       return true;
     } else {
@@ -41,9 +43,15 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
     }
   }
 
+  togglePauseButton() {
+    setState(() {
+      isPaused ? isPaused = false : isPaused = true;
+    });
+  }
+
   Future download2(Dio dio, String url, String name) async {
     var tempDir = await getTemporaryDirectory();
-    String fullPath = tempDir.path + "/$name.mp4";
+    String fullPath = tempDir.path + "/$name";
     try {
       Response response = await dio.get(url,
           //Received data with List<int>
@@ -70,7 +78,7 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
   Future download(Dio dio, String url, String name) async {
     var tempDir = await getExternalStorageDirectory();
     print(tempDir.path);
-    String fullPath = tempDir.path + "/$name.mp4";
+    String fullPath = tempDir.path + "/$name";
     dir1 = tempDir.path;
     try {
       Response response = await dio.get(url,
@@ -100,6 +108,13 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
     directory.deleteSync(recursive: true);
   }
 
+  Future _getImagesByDuration() async {
+    var file = File("$dir/${widget.name}");
+    var duration = videoPlayerController.value.position;
+    var image = await ExportVideoFrame.exportImageBySeconds(file, duration, 0);
+    await ExportVideoFrame.saveImage(image, 'Call Info Images');
+  }
+
   start() async {
     if (await checkExistance(widget.name) == false) {
       setState(() {
@@ -113,6 +128,22 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
       setState(() {
         isLoadingMain = false;
       });
+
+      videoPlayerController = VideoPlayerController.file(
+        File("$dir/${widget.name}"),
+      );
+
+      chewieController = ChewieController(
+        videoPlayerController: videoPlayerController,
+        allowFullScreen: false,
+        allowMuting: false,
+        showControls: false,
+        aspectRatio: 3 / 2,
+        autoPlay: true,
+        looping: true,
+        autoInitialize: true,
+        placeholder: Container(),
+      );
     }
   }
 
@@ -132,18 +163,10 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
 
   @override
   Widget build(BuildContext context) {
-    videoPlayerController = VideoPlayerController.file(
-      File("$dir/${widget.name}.mp4"),
-    );
-
-    chewieController = ChewieController(
-      videoPlayerController: videoPlayerController,
-      aspectRatio: 3 / 2,
-      autoPlay: true,
-      looping: false,
-      autoInitialize: true,
-      placeholder: Container(),
-    );
+    // AppData _provider = Provider.of<AppData>(
+    //   context,
+    //   listen: false,
+    // );
 
     return Scaffold(
       body: isLoadingMain
@@ -167,23 +190,69 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
                               controller: chewieController,
                             ),
                             Container(
-                              width: 100.0,
+                              width: 200.0,
                               height: 100.0,
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  !isPaused
+                                      ? InkWell(
+                                          onTap: () {
+                                            videoPlayerController.pause();
+                                            togglePauseButton();
+                                          },
+                                          child: Icon(
+                                            Icons.pause,
+                                            size: 50.0,
+                                          ),
+                                        )
+                                      : InkWell(
+                                          onTap: () {
+                                            videoPlayerController.play();
+                                            togglePauseButton();
+                                          },
+                                          child: Icon(
+                                            Icons.play_arrow,
+                                            size: 50.0,
+                                          ),
+                                        ),
+                                  InkWell(
+                                    onTap: () {
+                                      videoPlayerController.seekTo(
+                                        Duration(
+                                          seconds: 0,
+                                        ),
+                                      );
+                                      videoPlayerController.pause();
+                                      setState(() {
+                                        isPaused = true;
+                                      });
+                                    },
+                                    child: Icon(
+                                      Icons.stop,
+                                      size: 50.0,
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () async {
+                                      await _getImagesByDuration();
+                                    },
+                                    child: Icon(
+                                      Icons.crop_original,
+                                      size: 50.0,
+                                    ),
+                                  ),
                                   Builder(
                                     builder: (context) => InkWell(
-                                      onTap: () async {
-                                        await download(
-                                          dio,
-                                          widget.url,
-                                          widget.name,
+                                      onTap: () {
+                                        GallerySaver.saveVideo(
+                                          "$dir/${widget.name}",
+                                          albumName: 'Call Info Video',
                                         );
                                         Scaffold.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              'Файл сохранён в $dir1',
+                                              'Файл сохранён в альбом "Call Info Video"',
                                             ),
                                           ),
                                         );
