@@ -26,8 +26,8 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
   DateTime _date = DateTime.now();
   double _hour = double.parse(DateTime.now().hour.toString());
   DateTime _selectedDate = DateTime.now();
-  String _selectedTime = '00';
-  List<String> _timeList = [];
+  String _selectedTime = 'ВСЕ';
+  List<String> _timeList = ['ВСЕ'];
   bool _noVideo;
   final _globalKey = GlobalKey<ScaffoldState>();
   StateSetter setModalSheetState;
@@ -165,12 +165,15 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
   }
 
   showUniversalPicker() {
+    _selectedTime = 'ВСЕ';
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
           return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setSheetState) {
-              _selectedTime = '00';
+            builder: (
+              BuildContext context,
+              StateSetter setSheetState,
+            ) {
               return Container(
                 height: 300,
                 child: Column(
@@ -191,49 +194,29 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                           children: [
                             CupertinoButton(
                               child: Text(
-                                'Показать всё',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _date = DateTime(
-                                      _selectedDate.year,
-                                      _selectedDate.month,
-                                      _selectedDate.day,
-                                      int.parse(_selectedTime));
-                                });
-                                _calendarController.setSelectedDay(_date);
-                                Navigator.of(context).pop();
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => ChooseVideo(
-                                      date: _date,
-                                      wholeDay: true,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            CupertinoButton(
-                              child: Text(
                                 'Подтвердить',
                                 style: TextStyle(color: Colors.blue),
                               ),
                               onPressed: () {
                                 setState(() {
                                   _date = DateTime(
-                                      _selectedDate.year,
-                                      _selectedDate.month,
-                                      _selectedDate.day,
-                                      int.parse(_selectedTime));
+                                    _selectedDate.year,
+                                    _selectedDate.month,
+                                    _selectedDate.day,
+                                    _selectedTime == 'ВСЕ'
+                                        ? 00
+                                        : int.parse(_selectedTime),
+                                  );
                                 });
+                                print(_selectedTime);
                                 _calendarController.setSelectedDay(_date);
                                 Navigator.of(context).pop();
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) => ChooseVideo(
                                       date: _date,
-                                      wholeDay: false,
+                                      wholeDay:
+                                          _selectedTime == "ВСЕ" ? true : false,
                                     ),
                                   ),
                                 );
@@ -251,13 +234,30 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                           Flexible(
                             flex: 8,
                             child: CupertinoDatePicker(
+                              // minuteInterval: 1,
                               mode: CupertinoDatePickerMode.date,
                               initialDateTime: _date,
                               onDateTimeChanged: (DateTime dateTime) {
+                                // setState(() {
+                                //   setModalSheetState = setSheetState;
+                                // });
+                                // debugger();
                                 setState(() {
-                                  setModalSheetState = setSheetState;
+                                  _selectedDate = dateTime;
                                 });
-                                _selectedDate = dateTime;
+                                // _timeList.clear();
+                                // setSheetState(() {
+                                //   _timeList.add("ВСЕ");
+                                //   getHours();
+                                //   for (int i = 0; i < 24; i++) {
+                                //     if (_hours.contains(
+                                //         i.toString().padLeft(2, '0'))) {
+                                //       _timeList.add(
+                                //         i.toString().padLeft(2, '0'),
+                                //       );
+                                //     }
+                                //   }
+                                // });
                                 // setTimeList();
                               },
                             ),
@@ -268,7 +268,7 @@ class _VideoArchivePageState extends State<VideoArchivePage> {
                                 itemExtent: 38,
                                 magnification: 0.95,
                                 useMagnifier: true,
-                                looping: true,
+                                // looping: true,
                                 onSelectedItemChanged: (int index) {
                                   setState(() {
                                     _selectedTime = _timeList[index];

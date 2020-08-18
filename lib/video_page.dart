@@ -190,10 +190,10 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
                               controller: chewieController,
                             ),
                             Container(
-                              width: 200.0,
+                              width: 300.0,
                               height: 100.0,
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
                                   !isPaused
                                       ? InkWell(
@@ -233,13 +233,22 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
                                       size: 50.0,
                                     ),
                                   ),
-                                  InkWell(
-                                    onTap: () async {
-                                      await _getImagesByDuration();
-                                    },
-                                    child: Icon(
-                                      Icons.crop_original,
-                                      size: 50.0,
+                                  Builder(
+                                    builder: (context) => InkWell(
+                                      onTap: () async {
+                                        await _getImagesByDuration();
+                                        Scaffold.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Файл сохранён в альбом "Call Info Images"',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.crop_original,
+                                        size: 50.0,
+                                      ),
                                     ),
                                   ),
                                   Builder(
@@ -277,15 +286,26 @@ class _VideoArchivePageTestState extends State<VideoArchivePageTest> {
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  )
+                  BackButton(),
                 ],
               ),
             ),
+    );
+  }
+}
+
+class BackButton extends StatelessWidget {
+  const BackButton({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () {
+        Navigator.pop(context);
+      },
     );
   }
 }
